@@ -11,7 +11,12 @@
 
 <body>
     <nav class="navbar">
-        <a href="index.html" class="brand-logo">🚍 LMCST Tracker</a>
+        <a href="index.html" class="brand-logo" style="text-decoration: none;">
+            <div class="premium-logo">
+                <span class="logo-text">LMCST Tracker</span>
+                <div class="bus-wrapper"><span class="bus-emoji">🚌</span></div>
+            </div>
+        </a>
         <ul class="nav-links">
             <li><a href="index.html">Student Map</a></li>
             <li><a href="driver.html">Driver Console</a></li>
@@ -33,6 +38,25 @@
                 <div class="status-dot active"></div>
                 <span>Live Feed Syncing</span>
             </div>
+        </div>
+
+        <div class="card" style="margin-bottom: 25px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h3 style="margin: 0;">Data Management</h3>
+            </div>
+            <div style="display: flex; gap: 15px; align-items: center;">
+                <select id="deleteRouteSelect"
+                    style="flex: 1; padding: 12px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-color); font-family: inherit; font-size: 16px;">
+                    <option value="ALL">All Routes</option>
+                    <script>
+                        for (let i = 1; i <= 9; i++) document.write(`<option value="R0${i}">Route R0${i}</option>`);
+                    </script>
+                </select>
+                <button class="btn btn-primary"
+                    style="background-color: #ff4747; border: none; padding: 12px 25px; border-radius: 8px;"
+                    onclick="clearLocation()">Delete Location Info</button>
+            </div>
+            <div id="deleteStatus" style="margin-top: 10px; font-weight: 500; font-size: 14px;"></div>
         </div>
 
         <div class="card p-0">
@@ -60,6 +84,7 @@
                     headers: { "Content-Type": "application/json" }
                 });
                 const fleet = await res.json();
+                const currentFleetIds = fleet.map(bus => bus.id);
 
                 fleet.forEach(bus => {
                     if (bus.lat) {
@@ -74,8 +99,46 @@
                         }
                     }
                 });
+
+                Object.keys(markers).forEach(id => {
+                    if (!currentFleetIds.includes(id)) {
+                        map.removeLayer(markers[id]);
+                        delete markers[id];
+                    }
+                });
             } catch (e) {
                 console.log("Syncing fleet...", e);
+            }
+        }
+
+        async function clearLocation() {
+            const routeId = document.getElementById('deleteRouteSelect').value;
+            const statusEl = document.getElementById('deleteStatus');
+            const confirmMsg = routeId === 'ALL' ? 'Are you sure you want to delete ALL location data?' : `Are you sure you want to delete location data for ${routeId}?`;
+
+            if (!confirm(confirmMsg)) return;
+
+            statusEl.innerText = "Deleting...";
+            try {
+                const res = await fetch('/api/clearLocation', {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ routeId })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    statusEl.style.color = "green";
+                    statusEl.innerText = "Data deleted successfully!";
+                    setTimeout(() => { statusEl.innerText = ""; statusEl.style.color = ""; }, 3000);
+                    update();
+                } else {
+                    statusEl.style.color = "red";
+                    statusEl.innerText = "Failed to delete: " + (data.error || "Unknown error");
+                }
+            } catch (e) {
+                console.error("Error clearing location", e);
+                statusEl.style.color = "red";
+                statusEl.innerText = "Error clearing location.";
             }
         }
         setInterval(update, 3000);

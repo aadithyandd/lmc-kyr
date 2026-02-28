@@ -1,5 +1,5 @@
-/* Import Google Fonts - Outfit and Inter */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@400;500;600;700&display=swap');
+/* Import Google Fonts - Outfit, Inter, Montserrat, and Poppins */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@400;500;600;700&family=Montserrat:wght@800;900&family=Poppins:wght@700;800;900&display=swap');
 
 :root {
   --bg-color: #F6F1EA;
@@ -62,6 +62,130 @@ h4,
   gap: 10px;
   text-decoration: none;
   color: var(--text-dark);
+}
+
+/* Premium Driving Bus Logo */
+.premium-logo {
+  position: relative;
+  display: inline-block;
+  padding-bottom: 8px;
+  margin: 0;
+}
+
+.logo-text {
+  font-family: 'Poppins', sans-serif;
+  font-size: 28px;
+  font-weight: 800;
+  /* Dark text, with a shiny gold gradient we will move across it */
+  background: linear-gradient(90deg,
+      var(--text-dark) 0%,
+      var(--text-dark) 35%,
+      #ffcc00 45%,
+      #ff9900 50%,
+      #ffcc00 55%,
+      var(--text-dark) 65%,
+      var(--text-dark) 100%);
+  background-size: 400% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  /* fallback */
+  position: relative;
+  z-index: 2;
+  letter-spacing: -0.5px;
+  /* Sync the 6s text background shift perfectly with the 6s bus driving */
+  animation: bus-glow-sync 6s linear infinite;
+  transition: clip-path 0.3s ease;
+}
+
+@keyframes bus-glow-sync {
+  0% {
+    background-position: 100% 0%;
+  }
+
+  60% {
+    background-position: 0% 0%;
+  }
+
+  100% {
+    background-position: 0% 0%;
+  }
+}
+
+.premium-logo:hover .logo-text {
+  background: none;
+  -webkit-text-fill-color: var(--accent-orange);
+  color: var(--accent-orange);
+}
+
+/* Road Line */
+.premium-logo::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background: var(--text-dark);
+  border-radius: 4px;
+}
+
+/* Bus Container */
+.bus-wrapper {
+  position: absolute;
+  bottom: -3px;
+  left: -40px;
+  z-index: 3;
+  animation: drive-across 6s linear infinite;
+  pointer-events: none;
+}
+
+/* Bouncing Bus Emoji */
+.bus-emoji {
+  display: inline-block;
+  font-size: 22px;
+  transform: scaleX(-1);
+  /* Face right */
+  animation: bus-bounce 0.4s ease-in-out infinite alternate;
+  filter: drop-shadow(0px 2px 2px rgba(0, 0, 0, 0.15));
+}
+
+@keyframes drive-across {
+  0% {
+    left: -40px;
+    opacity: 0;
+  }
+
+  5% {
+    left: -20px;
+    opacity: 1;
+  }
+
+  55% {
+    left: 105%;
+    opacity: 1;
+  }
+
+  60% {
+    left: 115%;
+    opacity: 0;
+  }
+
+  100% {
+    left: 115%;
+    opacity: 0;
+  }
+}
+
+@keyframes bus-bounce {
+  0% {
+    transform: scaleX(-1) translateY(0px);
+  }
+
+  100% {
+    transform: scaleX(-1) translateY(-3px);
+  }
 }
 
 .nav-links {
@@ -278,6 +402,15 @@ select:focus {
     gap: 15px;
     padding: 15px;
     border-radius: 20px;
+  }
+
+  .brand-logo {
+    align-self: flex-start;
+    margin-left: 5px;
+  }
+
+  .logo-text {
+    font-size: 32px;
   }
 
   .nav-links {

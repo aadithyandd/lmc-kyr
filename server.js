@@ -108,6 +108,27 @@ app.post('/api/updateLocation', async (req, res) => {
     }
 });
 
+// Clear driver location
+app.post('/api/clearLocation', async (req, res) => {
+    try {
+        const { routeId } = req.body;
+        if (!routeId) {
+            return res.status(400).json({ error: 'Missing routeId field' });
+        }
+
+        if (routeId === 'ALL') {
+            await pool.query('DELETE FROM bus_locations');
+        } else {
+            await pool.query('DELETE FROM bus_locations WHERE route_id = $1', [routeId]);
+        }
+
+        res.json({ success: true, message: 'Location cleared' });
+    } catch (err) {
+        console.error("Error clearing location:", err);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
 app.listen(port, () => {
     console.log(`Server running on http://localhost:${port}`);
     console.log(`Remember to set up your Neon PG Database and update .env`);
