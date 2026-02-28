@@ -48,6 +48,37 @@
     <script>
         const API_URL = "/api/updateLocation";
         let isSharing = false, watchId;
+        let wakeLock = null; // Variable to hold the wake lock
+
+        // Function to request wake lock
+        async function requestWakeLock() {
+            if ('wakeLock' in navigator) {
+                try {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                    wakeLock.addEventListener('release', () => {
+                        console.log('Screen Wake Lock released');
+                    });
+                    console.log('Screen Wake Lock acquired');
+                } catch (err) {
+                    console.error(`${err.name}, ${err.message}`);
+                }
+            }
+        }
+
+        // Function to release wake lock
+        function releaseWakeLock() {
+            if (wakeLock !== null) {
+                wakeLock.release();
+                wakeLock = null;
+            }
+        }
+
+        // Re-acquire wake lock if the user minimizes the browser then brings it back
+        document.addEventListener('visibilitychange', async () => {
+            if (wakeLock !== null && document.visibilityState === 'visible') {
+                await requestWakeLock();
+            }
+        });
 
         async function toggle() {
             if (document.getElementById('pass').value !== "1234") return alert("Access Denied");
@@ -60,10 +91,13 @@
 
             if (!isSharing) {
                 isSharing = true;
-                btn.innerText = "STOP BROADCAST";
+                btn.innerText = "STOP BROADCAST (SCREEN WON'T SLEEP)";
                 btn.classList.remove('btn-danger');
                 btn.classList.add('btn-primary');
                 indicator.classList.add('active');
+
+                // Keep the phone screen awake!
+                await requestWakeLock();
 
                 if (!navigator.geolocation) {
                     alert("Geolocation is not supported by your browser");
@@ -97,6 +131,9 @@
                 btn.classList.remove('btn-primary');
                 btn.classList.add('btn-danger');
                 indicator.classList.remove('active');
+
+                // Let the screen go to sleep normally again
+                releaseWakeLock();
 
                 navigator.geolocation.clearWatch(watchId);
                 statText.innerText = "Broadcast Ended";
