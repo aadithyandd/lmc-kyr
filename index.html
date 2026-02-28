@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LMCST | RouteTracker</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="icon" href="images/icon.png" type="image/x-icon">
+
+</head>
+
+<body>
+    <nav class="navbar">
+        <a href="index.html" class="brand-logo">🚍 LMCST Tracker</a>
+        <ul class="nav-links">
+        </ul>
+        <div class="nav-actions">
+            <!-- Hidden from students -->
+        </div>
+    </nav>
+
+    <div class="main-content">
+        <div class="header-section">
+            <div class="tag">Live GPS System</div>
+            <h1 class="hero-title">Know Your Ride</h1>
+            <p class="hero-subtitle">Discover our highly skilled fleet and stay on top of the schedule. Never seamlessly
+                miss your ride, keeping students and staff connected.</p>
+
+            <div class="card card-dark" style="margin-top: 30px;">
+                <h2 class="card-header">Select Route</h2>
+                <select id="routeSelect">
+                    <option value="">-- Choose Route --</option>
+                    <script>
+                        for (let i = 1; i <= 9; i++) document.write(`<option value="R0${i}">Route R0${i}</option>`);
+                    </script>
+                </select>
+                <button class="btn btn-primary" style="width: 100%; border-radius: 12px; padding: 18px;"
+                    onclick="startTracking()">Locate Bus →</button>
+            </div>
+        </div>
+
+        <div class="card map-container">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h3 style="font-size: 20px;">Live Map</h3>
+                <span class="tag" style="margin: 0;">Updated Location</span>
+            </div>
+            <div id="map"></div>
+            <div class="status" id="status">
+                <div class="status-dot tooltip" id="indicator"></div>
+                <span id="statText">Select a route to view location</span>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        const API_URL = "/api/getLocation";
+        let map, busMarker, poll;
+
+        function initMap() {
+            if (!map) {
+                map = L.map('map').setView([8.5241, 76.9366], 13);
+                L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png').addTo(map);
+
+                const busIcon = L.icon({
+                    iconUrl: 'https://cdn-icons-png.flaticon.com/512/3448/3448339.png',
+                    iconSize: [32, 32],
+                    iconAnchor: [16, 16]
+                });
+                busMarker = L.marker([0, 0], { icon: busIcon }).addTo(map);
+            }
+        }
+
+        async function startTracking() {
+            const rid = document.getElementById('routeSelect').value;
+            if (!rid) return alert("Please select a route");
+            initMap();
+            document.getElementById('statText').innerText = "Connecting to live feed...";
+            document.getElementById('indicator').classList.remove('active');
+
+            if (poll) clearInterval(poll);
+            poll = setInterval(async () => {
+                try {
+                    const res = await fetch(API_URL, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ routeId: rid })
+                    });
+                    const data = await res.json();
+                    if (data.lat) {
+                        const pos = [data.lat, data.lng];
+                        busMarker.setLatLng(pos);
+                        map.panTo(pos, { animate: true, duration: 1.0 });
+                        document.getElementById('statText').innerText = "Live • Last updated: " + new Date().toLocaleTimeString();
+                        document.getElementById('indicator').classList.add('active');
+                    } else {
+                        document.getElementById('statText').innerText = "Bus location not found yet!";
+                        document.getElementById('indicator').classList.remove('active');
+                    }
+                } catch (e) {
+                    console.log("Retrying...", e);
+                    document.getElementById('indicator').classList.remove('active');
+                }
+            }, 2500);
+        }
+    </script>
+</body>
+
+</html>

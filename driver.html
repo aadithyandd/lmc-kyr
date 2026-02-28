@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Driver | LMCST Tracker</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <nav class="navbar">
+        <a href="index.html" class="brand-logo">🚍 LMCST Tracker</a>
+        <ul class="nav-links">
+            <li><a href="index.html">Student Map</a></li>
+            <li><a href="driver.html">Driver Console</a></li>
+            <li><a href="admin.html">Fleet Command</a></li>
+        </ul>
+        <div class="nav-actions">
+            <a href="driver.html" class="btn btn-primary">Login</a>
+        </div>
+    </nav>
+
+    <div class="card card-dark" style="max-width: 500px; width: 100%; margin: 80px auto;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+            <h1 class="card-header" style="margin: 0;">Driver Console</h1>
+            <span class="tag">GPS Emitter</span>
+        </div>
+
+        <input type="password" id="pass" placeholder="Admin Password (1234)">
+        <select id="route">
+            <option value="">-- Assigner Route --</option>
+            <script>
+                for (let i = 1; i <= 9; i++) document.write(`<option value="R0${i}">Route R0${i}</option>`);
+            </script>
+        </select>
+
+        <button id="btn" class="btn btn-danger"
+            style="width: 100%; font-size: 16px; padding: 18px; border-radius: 12px;" onclick="toggle()">START
+            BROADCAST</button>
+
+        <div class="status" id="stat" style="justify-content: center; margin-top: 25px;">
+            <div class="status-dot tooltip" id="indicator"></div>
+            <span id="statText">Status: Ready to transmit</span>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = "/api/updateLocation";
+        let isSharing = false, watchId;
+
+        async function toggle() {
+            if (document.getElementById('pass').value !== "1234") return alert("Access Denied");
+
+            const btn = document.getElementById('btn'), rid = document.getElementById('route').value;
+            const statText = document.getElementById('statText');
+            const indicator = document.getElementById('indicator');
+
+            if (!rid) return alert("Please select a route");
+
+            if (!isSharing) {
+                isSharing = true;
+                btn.innerText = "STOP BROADCAST";
+                btn.classList.remove('btn-danger');
+                btn.classList.add('btn-primary');
+                indicator.classList.add('active');
+
+                if (!navigator.geolocation) {
+                    alert("Geolocation is not supported by your browser");
+                    return;
+                }
+
+                watchId = navigator.geolocation.watchPosition(async (p) => {
+                    try {
+                        await fetch(API_URL, {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                                action: "updateLocation",
+                                routeId: rid,
+                                lat: p.coords.latitude,
+                                lng: p.coords.longitude
+                            })
+                        });
+                        statText.innerText = "Transmitting Live @ " + new Date().toLocaleTimeString();
+                    } catch (err) {
+                        statText.innerText = "Error syncing with server!";
+                    }
+                }, (error) => {
+                    alert("Location error: " + error.message + " (If testing on mobile, you need HTTPS or localhost)");
+                    statText.innerText = "Location Permission Denied";
+                    indicator.classList.remove('active');
+                }, { enableHighAccuracy: true, maximumAge: 0 });
+            } else {
+                isSharing = false;
+                btn.innerText = "START BROADCAST";
+                btn.classList.remove('btn-primary');
+                btn.classList.add('btn-danger');
+                indicator.classList.remove('active');
+
+                navigator.geolocation.clearWatch(watchId);
+                statText.innerText = "Broadcast Ended";
+            }
+        }
+    </script>
+</body>
+
+</html>
